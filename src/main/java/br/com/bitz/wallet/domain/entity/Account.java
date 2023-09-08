@@ -6,10 +6,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -49,6 +51,9 @@ public class Account implements UserDetails {
 
     @Column(name = "password")
     private String password;
+
+    @Column(name = "balance")
+    private BigDecimal balance = new BigDecimal("20.00");
 
     @Enumerated(EnumType.STRING)
     @Column(name = "account_type")
