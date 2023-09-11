@@ -5,10 +5,9 @@ import br.com.bitz.wallet.util.CPForCNPJUtil;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.UUID;
 
 public record AccountDataResponse(
-        UUID id,
+        String id,
         String fullName,
         String document,
         String email,

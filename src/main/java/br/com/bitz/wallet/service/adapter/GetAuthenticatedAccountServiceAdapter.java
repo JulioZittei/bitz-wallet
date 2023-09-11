@@ -1,6 +1,7 @@
 package br.com.bitz.wallet.service.adapter;
 
 import br.com.bitz.wallet.domain.entity.Account;
+import br.com.bitz.wallet.exception.AccountNotFoundException;
 import br.com.bitz.wallet.repository.AccountRepository;
 import br.com.bitz.wallet.service.port.GetAuthenticatedAccountService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,9 @@ public class GetAuthenticatedAccountServiceAdapter implements GetAuthenticatedAc
 
     private final AccountRepository accountRepository;
     @Override
-    public Account execute(String email) {
-        return (Account) accountRepository.findByEmail(email);
+    public Account execute(final String email) {
+        return accountRepository.findByEmail(email).orElseThrow(()-> {
+            throw new AccountNotFoundException();
+        });
     }
 }
