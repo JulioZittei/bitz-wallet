@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +14,6 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 
 @Getter
@@ -28,7 +26,7 @@ import java.util.UUID;
 @EqualsAndHashCode(of = "id")
 public class Account implements UserDetails {
 
-    public Account(AccountRegisterDataRequest requestData) {
+    public Account(final AccountRegisterDataRequest requestData) {
         this.fullName = requestData.fullName();
         this.document = requestData.document();
         this.email = requestData.email();
@@ -37,8 +35,8 @@ public class Account implements UserDetails {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private String id;
 
     @Column(name = "full_name")
     private String fullName;
@@ -69,7 +67,7 @@ public class Account implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(this.accountType.name()));
+        return List.of(new SimpleGrantedAuthority("ROLE_".concat(this.accountType.name())));
     }
 
     @Override
