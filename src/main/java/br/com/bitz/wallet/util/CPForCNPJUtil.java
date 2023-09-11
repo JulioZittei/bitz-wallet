@@ -2,7 +2,7 @@ package br.com.bitz.wallet.util;
 
 import java.util.Objects;
 
-public class CPForCNPJUtil {
+public abstract class CPForCNPJUtil {
 
     private CPForCNPJUtil(){}
 
