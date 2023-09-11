@@ -8,10 +8,10 @@ import br.com.bitz.wallet.exception.BalanceInsuficientException;
 import br.com.bitz.wallet.exception.PayeeNotFoundException;
 import br.com.bitz.wallet.exception.PayerNotFoundException;
 import br.com.bitz.wallet.exception.TransactionNotAuthorizedException;
-import br.com.bitz.wallet.repository.AccountRepository;
-import br.com.bitz.wallet.repository.TransactionRepository;
+import br.com.bitz.wallet.repository.account.AccountRepository;
+import br.com.bitz.wallet.repository.transaction.TransactionRepository;
 import br.com.bitz.wallet.service.port.FraudPreventionService;
-import br.com.bitz.wallet.service.port.TransactionService;
+import br.com.bitz.wallet.service.port.CreateTransactionService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
-public class TransactionServiceAdapter implements TransactionService {
+public class CreateTransactionServiceAdapter implements CreateTransactionService {
 
     private final EntityManager entityManager;
 

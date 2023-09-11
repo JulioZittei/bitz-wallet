@@ -1,7 +1,7 @@
 package br.com.bitz.wallet.config.security.filter;
 
 import br.com.bitz.wallet.exception.ErrorsCode;
-import br.com.bitz.wallet.repository.AccountRepository;
+import br.com.bitz.wallet.repository.account.AccountRepository;
 import br.com.bitz.wallet.service.port.JWTTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;

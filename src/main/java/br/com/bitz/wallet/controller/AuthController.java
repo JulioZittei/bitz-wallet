@@ -5,7 +5,7 @@ import br.com.bitz.wallet.domain.model.request.AuthDataRequest;
 import br.com.bitz.wallet.domain.model.response.AccountDataResponse;
 import br.com.bitz.wallet.domain.model.response.TokenDataResponse;
 import br.com.bitz.wallet.service.port.AuthService;
-import br.com.bitz.wallet.service.port.RegisterService;
+import br.com.bitz.wallet.service.port.CreateAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final RegisterService registerService;
+    private final CreateAccountService createAccountService;
 
     private final AuthService authService;
 
@@ -28,7 +28,7 @@ public class AuthController {
     public ResponseEntity<AccountDataResponse> createAccount(@RequestBody @Valid final AccountRegisterDataRequest requestData,
                                                              UriComponentsBuilder uriBuilder) {
         var uri = uriBuilder.path("/api/v1/accounts/me").build().toUri();
-        return ResponseEntity.created(uri).body(registerService.execute(requestData));
+        return ResponseEntity.created(uri).body(createAccountService.execute(requestData));
     }
 
     @PostMapping("/authenticate")

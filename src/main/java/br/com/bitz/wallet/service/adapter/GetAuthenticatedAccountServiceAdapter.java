@@ -2,7 +2,7 @@ package br.com.bitz.wallet.service.adapter;
 
 import br.com.bitz.wallet.domain.entity.Account;
 import br.com.bitz.wallet.exception.AccountNotFoundException;
-import br.com.bitz.wallet.repository.AccountRepository;
+import br.com.bitz.wallet.repository.account.AccountRepository;
 import br.com.bitz.wallet.service.port.GetAuthenticatedAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

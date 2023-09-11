@@ -1,4 +1,4 @@
-package br.com.bitz.wallet.repository;
+package br.com.bitz.wallet.repository.account;
 
 import br.com.bitz.wallet.domain.entity.Account;
 import org.springframework.data.jpa.repository.JpaRepository;

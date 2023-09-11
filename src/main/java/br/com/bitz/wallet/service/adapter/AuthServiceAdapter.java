@@ -3,7 +3,7 @@ package br.com.bitz.wallet.service.adapter;
 import br.com.bitz.wallet.domain.entity.Account;
 import br.com.bitz.wallet.domain.model.request.AuthDataRequest;
 import br.com.bitz.wallet.domain.model.response.TokenDataResponse;
-import br.com.bitz.wallet.repository.AccountRepository;
+import br.com.bitz.wallet.repository.account.AccountRepository;
 import br.com.bitz.wallet.service.port.AuthService;
 import br.com.bitz.wallet.service.port.JWTTokenService;
 import lombok.RequiredArgsConstructor;

@@ -4,8 +4,8 @@ import br.com.bitz.wallet.domain.entity.Account;
 import br.com.bitz.wallet.domain.model.request.AccountRegisterDataRequest;
 import br.com.bitz.wallet.domain.model.response.AccountDataResponse;
 import br.com.bitz.wallet.exception.AccountConflictException;
-import br.com.bitz.wallet.repository.AccountRepository;
-import br.com.bitz.wallet.service.port.RegisterService;
+import br.com.bitz.wallet.repository.account.AccountRepository;
+import br.com.bitz.wallet.service.port.CreateAccountService;
 import br.com.bitz.wallet.util.PasswordEncoderUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class RegisterServiceAdapter implements RegisterService {
+public class CreateAccountServiceAdapter implements CreateAccountService {
 
     private final AccountRepository accountRepository;
 
