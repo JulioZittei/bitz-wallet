@@ -36,7 +36,7 @@ public class JWTTokenServiceAdapter implements JWTTokenService {
                     .verify(token)
                     .getSubject();
         } catch (JWTVerificationException ex) {
-            throw new RuntimeException(ex);
+            throw ex;
         }
     }
 
@@ -53,7 +53,7 @@ public class JWTTokenServiceAdapter implements JWTTokenService {
                     .withExpiresAt(expiration)
                     .sign(algorithm);
         } catch (JWTCreationException ex) {
-            throw new RuntimeException(ex);
+            throw ex;
         }
     }
 }

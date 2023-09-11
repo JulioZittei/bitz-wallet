@@ -1,6 +1,8 @@
 package br.com.bitz.wallet.config.security;
 
 import br.com.bitz.wallet.config.security.filter.AuthFilter;
+import br.com.bitz.wallet.controller.exception.handler.BitzWalletExceptionHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,21 +25,33 @@ public class SecurityConfig {
 
     private final AuthFilter authFilter;
 
+    private final BitzWalletExceptionHandler exceptionHandler;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final String TYPE = "type";
+    private static final String CODE = "code";
+    private static final String TITLE = "title";
+    private static final String DETAIL = "detail";
+    private static final String INSTANCE = "instance";
+
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/transactions").hasRole("PF")
                         .requestMatchers(HttpMethod.GET, "/v3/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exh -> exh
+                        .accessDeniedHandler(exceptionHandler)
+                        .authenticationEntryPoint(exceptionHandler))
                 .build();
     }
 
     @Bean
-    public AuthenticationManager getAuthenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager getAuthenticationManager(final AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -45,4 +59,5 @@ public class SecurityConfig {
     public PasswordEncoder getPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 }

@@ -1,37 +1,205 @@
 package br.com.bitz.wallet.controller.exception.handler;
 
-import br.com.bitz.wallet.exception.ErrorsCode;
+import br.com.bitz.wallet.exception.*;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
-public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler {
+public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler implements AccessDeniedHandler, AuthenticationEntryPoint {
 
     private final MessageSource messageSource;
-
-    private static final String TYPE = "type";
-    private static final String CODE = "code";
-    private static final String TITLE = "title";
-    private static final String DETAIL = "detail";
-    private static final String INSTANCE = "instance";
-    private static final String INVALID_PARAMS = "invalid-params";
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final String MESSAGE = ".message";
 
     public BitzWalletExceptionHandler(@Autowired MessageSource messageSource) {
         this.messageSource = messageSource;
+    }
+
+    @Override
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex) throws IOException, ServletException {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW403.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW403.getTitleText());
+        problem.put(ErrorsField.DETAIL, ErrorsCode.BTW403.getDetailText());
+        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
+
+        String responseBodyJson = objectMapper.writeValueAsString(problem);
+
+        response.setStatus(ErrorsCode.BTW403.getCode());
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(responseBodyJson);
+        response.getWriter().flush();
+        response.getWriter().close();
+    }
+
+    @Override
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex) throws IOException, ServletException {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
+        problem.put(ErrorsField.DETAIL, ErrorsCode.BTW401.getDetailText());
+        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
+
+        String responseBodyJson = objectMapper.writeValueAsString(problem);
+
+        response.setStatus(ErrorsCode.BTW401.getCode());
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write(responseBodyJson);
+        response.getWriter().flush();
+        response.getWriter().close();
+    }
+
+    @ExceptionHandler(AccountConflictException.class)
+    public ResponseEntity<Object> handleAccountConflict(AccountConflictException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(BalanceInsuficientException.class)
+    public ResponseEntity<Object> handleBalanceInsuficient(BalanceInsuficientException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE,ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL,ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        if (!ex.getResponseFields().isEmpty()) {
+            ex.getResponseFields().entrySet().stream().forEach((entry -> problem.put(entry.getKey(), entry.getValue())));
+        }
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+    @ExceptionHandler(TransactionNotAuthorizedException.class)
+    public ResponseEntity<Object> handleTransactionNotAuthorized(TransactionNotAuthorizedException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE,ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL,ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        if (!ex.getResponseFields().isEmpty()) {
+            ex.getResponseFields().entrySet().stream().forEach((entry -> problem.put(entry.getKey(), entry.getValue())));
+        }
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(AccountNotFoundException.class)
+    public ResponseEntity<Object> handleAccountNotFound(AccountNotFoundException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        if (!ex.getResponseFields().isEmpty()) {
+            ex.getResponseFields().entrySet().stream().forEach((entry -> problem.put(entry.getKey(), entry.getValue())));
+        }
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(PayerNotFoundException.class)
+    public ResponseEntity<Object> handlePayerNotFound(PayerNotFoundException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        if (!ex.getResponseFields().isEmpty()) {
+            ex.getResponseFields().entrySet().stream().forEach((entry -> problem.put(entry.getKey(), entry.getValue())));
+        }
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(PayeeNotFoundException.class)
+    public ResponseEntity<Object> handlePayeeNotFound(PayeeNotFoundException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        if (!ex.getResponseFields().isEmpty()) {
+            ex.getResponseFields().entrySet().stream().forEach((entry -> problem.put(entry.getKey(), entry.getValue())));
+        }
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Object> handleBadCredentials(BadCredentialsException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
+        String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
+        problem.put(ErrorsField.DETAIL, message);
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ErrorsCode.BTW401.getHttpStatusCode(), request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW404.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW404.getTitleText());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ErrorsCode.BTW404.getHttpStatusCode(), request);
     }
 
     @Override
@@ -49,12 +217,86 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler {
             invalidParams.add(invalidParam);
         }
 
-        problem.put(CODE, ErrorsCode.BTW422.name());
-        problem.put(TITLE, ErrorsCode.BTW422.getTitleText());
-        problem.put(INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
-        problem.put(INVALID_PARAMS, invalidParams);
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW422.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW422.getTitleText());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+        problem.put(ErrorsField.INVALID_PARAMS, invalidParams);
 
         return handleExceptionInternal(ex, problem, headers, ErrorsCode.BTW422.getHttpStatusCode(), request);
     }
 
+    @Override
+    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW415.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW415.getTitleText());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, headers, ErrorsCode.BTW415.getHttpStatusCode(), request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW405.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW405.getTitleText());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, headers, ErrorsCode.BTW405.getHttpStatusCode(), request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        Throwable rootCause = ExceptionUtils.getRootCause(ex);
+
+        if (rootCause instanceof InvalidFormatException invalidFormatException) {
+            return handleInvalidFormat(invalidFormatException, headers, request);
+
+        } else if (rootCause instanceof JsonParseException jsonParseException) {
+            return handleJsonProcessing(jsonParseException, headers, request);
+        }
+
+        return handleExceptionInternal(ex, null, headers, ErrorsCode.BTW400.getHttpStatusCode(), request);
+    }
+
+    protected ResponseEntity<Object> handleInvalidFormat(InvalidFormatException ex, HttpHeaders headers, WebRequest request) {
+        String field = ex.getPath().stream()
+                .map(JsonMappingException.Reference::getFieldName)
+                .collect(Collectors.joining("."));
+
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
+
+        String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE))
+                .replace("{{field}}", field)
+                .replace("{{value}}", String.valueOf(ex.getValue()))
+                .replace("{{type}}", ex.getTargetType().getSimpleName());
+
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW400.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW400.getTitleText());
+        problem.put(ErrorsField.DETAIL, message);
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, headers, ErrorsCode.BTW400.getHttpStatusCode(), request);
+    }
+
+    protected ResponseEntity<Object> handleJsonProcessing(JsonProcessingException ex, HttpHeaders headers, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
+
+        String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
+
+
+        problem.put(ErrorsField.CODE, ErrorsCode.BTW400.name());
+        problem.put(ErrorsField.TITLE, ErrorsCode.BTW400.getTitleText());
+        problem.put(ErrorsField.DETAIL, message);
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, headers, ErrorsCode.BTW400.getHttpStatusCode(), request);
+    }
 }
+

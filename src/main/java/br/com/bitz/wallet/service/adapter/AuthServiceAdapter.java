@@ -29,7 +29,7 @@ public class AuthServiceAdapter implements UserDetailsService, AuthService {
     private final JWTTokenService jwtTokenService;
 
     @Override
-    public TokenDataResponse execute(AuthDataRequest requestData) {
+    public TokenDataResponse execute(final AuthDataRequest requestData) {
         var usernameAndPassword = new UsernamePasswordAuthenticationToken(requestData.email(), requestData.password());
         try {
             var auth = this.authManager.authenticate(usernameAndPassword);
@@ -41,7 +41,7 @@ public class AuthServiceAdapter implements UserDetailsService, AuthService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return this.accountRepository.findByEmail(email);
+    public UserDetails loadUserByUsername(final String email) throws UsernameNotFoundException {
+        return this.accountRepository.getByEmail(email);
     }
 }
