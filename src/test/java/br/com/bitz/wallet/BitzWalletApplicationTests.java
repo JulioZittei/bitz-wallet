@@ -1,4 +1,4 @@
-package br.com.bradesco.openstore;
+package br.com.bitz.wallet;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

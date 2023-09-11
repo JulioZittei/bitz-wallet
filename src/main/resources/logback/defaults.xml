@@ -1,0 +1,6 @@
+<included>
+    <logger level="INFO" name="org.springframework.web"/>
+
+    <logger level="INFO" name="br.com.bitz.wallet" />
+    <property name="CONSOLE_LOG_PATTERN" value="[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [%level] [%logger{0}.%method] [%mdc] %msg %n"/>
+</included>

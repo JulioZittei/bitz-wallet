@@ -1,5 +1,6 @@
 package br.com.bitz.wallet.controller.exception.handler;
 
+import br.com.bitz.wallet.config.log.StructuredLog;
 import br.com.bitz.wallet.exception.*;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -38,12 +40,16 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @ControllerAdvice
 public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler implements AccessDeniedHandler, AuthenticationEntryPoint {
 
     private final MessageSource messageSource;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final String MESSAGE = ".message";
+
+    private static final String CLIENT_ERROR = "A client error occurred during the request";
+    private static final String SERVER_ERROR = "A server error occurred during the request";
 
     public BitzWalletExceptionHandler(@Autowired MessageSource messageSource) {
         this.messageSource = messageSource;
@@ -52,6 +58,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex) throws IOException, ServletException {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW403.name())
+                .errorMessage(ErrorsCode.BTW403.getDetailText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ErrorsCode.BTW403.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW403.getTitleText());
@@ -71,6 +89,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex) throws IOException, ServletException {
         Map<String, Object> problem = new LinkedHashMap<>();
 
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW401.name())
+                .errorMessage(ErrorsCode.BTW401.getDetailText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
         problem.put(ErrorsField.DETAIL, ErrorsCode.BTW401.getDetailText());
@@ -85,9 +115,46 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
         response.getWriter().close();
     }
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<Object> handleServiceUnavailable(ServiceUnavailableException ex, WebRequest request) {
+        Map<String, Object> problem = new LinkedHashMap<>();
+
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW503.name())
+                .errorMessage(ErrorsCode.BTW503.getDetailText())
+                .exception(ex.getClass());
+
+        log.error(SERVER_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
+        problem.put(ErrorsField.CODE, ex.getCode().name());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
+        problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
+    }
+
     @ExceptionHandler(AccountConflictException.class)
     public ResponseEntity<Object> handleAccountConflict(AccountConflictException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ex.getCode().name());
         problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
@@ -101,9 +168,21 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     public ResponseEntity<Object> handleBalanceInsuficient(BalanceInsuficientException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
 
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ex.getCode().name());
-        problem.put(ErrorsField.TITLE,ex.getCode().getTitleText());
-        problem.put(ErrorsField.DETAIL,ex.getMessage());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
         problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
 
         if (!ex.getResponseFields().isEmpty()) {
@@ -112,13 +191,26 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
 
         return handleExceptionInternal(ex, problem, new HttpHeaders(), ex.getCode().getHttpStatusCode(), request);
     }
+
     @ExceptionHandler(TransactionNotAuthorizedException.class)
     public ResponseEntity<Object> handleTransactionNotAuthorized(TransactionNotAuthorizedException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
 
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ex.getCode().name());
-        problem.put(ErrorsField.TITLE,ex.getCode().getTitleText());
-        problem.put(ErrorsField.DETAIL,ex.getMessage());
+        problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
+        problem.put(ErrorsField.DETAIL, ex.getMessage());
         problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
 
         if (!ex.getResponseFields().isEmpty()) {
@@ -131,6 +223,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<Object> handleAccountNotFound(AccountNotFoundException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ex.getCode().name());
         problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
@@ -148,6 +252,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     public ResponseEntity<Object> handlePayerNotFound(PayerNotFoundException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
 
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ex.getCode().name());
         problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
         problem.put(ErrorsField.DETAIL, ex.getMessage());
@@ -163,6 +279,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     @ExceptionHandler(PayeeNotFoundException.class)
     public ResponseEntity<Object> handlePayeeNotFound(PayeeNotFoundException ex, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ex.getCode().name())
+                .errorMessage(ex.getMessage())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ex.getCode().name());
         problem.put(ErrorsField.TITLE, ex.getCode().getTitleText());
@@ -183,6 +311,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
         final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
         String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
 
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW401.name())
+                .errorMessage(message)
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
         problem.put(ErrorsField.DETAIL, message);
@@ -194,6 +334,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     @Override
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW401.name())
+                .errorMessage(ErrorsCode.BTW404.getTitleText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ErrorsCode.BTW404.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW404.getTitleText());
@@ -207,6 +359,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
         Map<String, Object> problem = new LinkedHashMap<>();
 
         List<Map<String, Object>> invalidParams = new ArrayList<>();
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW422.name())
+                .errorMessage(ErrorsCode.BTW422.getTitleText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         for (ObjectError error : ex.getBindingResult().getAllErrors()) {
             Map<String, Object> invalidParam = new HashMap<>();
@@ -229,6 +393,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
 
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW415.name())
+                .errorMessage(ErrorsCode.BTW415.getTitleText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         problem.put(ErrorsField.CODE, ErrorsCode.BTW415.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW415.getTitleText());
         problem.put(ErrorsField.INSTANCE, ((ServletWebRequest) request).getRequest().getRequestURI());
@@ -239,6 +415,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     @Override
     protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         Map<String, Object> problem = new LinkedHashMap<>();
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW405.name())
+                .errorMessage(ErrorsCode.BTW405.getTitleText())
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ErrorsCode.BTW405.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW405.getTitleText());
@@ -258,6 +446,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
             return handleJsonProcessing(jsonParseException, headers, request);
         }
 
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW400.name())
+                .errorMessage(rootCause.getMessage())
+                .exception(rootCause.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
+
         return handleExceptionInternal(ex, null, headers, ErrorsCode.BTW400.getHttpStatusCode(), request);
     }
 
@@ -272,6 +472,18 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
                 .replace("{{field}}", field)
                 .replace("{{value}}", String.valueOf(ex.getValue()))
                 .replace("{{type}}", ex.getTargetType().getSimpleName());
+
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW400.name())
+                .errorMessage(message)
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         Map<String, Object> problem = new LinkedHashMap<>();
 
@@ -290,6 +502,17 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
 
         String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
 
+        StructuredLog.builder()
+                .errorCode(ErrorsCode.BTW400.name())
+                .errorMessage(message)
+                .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+                .errorCode()
+                .errorMessage()
+                .exception();
 
         problem.put(ErrorsField.CODE, ErrorsCode.BTW400.name());
         problem.put(ErrorsField.TITLE, ErrorsCode.BTW400.getTitleText());

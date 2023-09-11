@@ -15,11 +15,13 @@ import br.com.bitz.wallet.service.port.CreateTransactionService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.RoundingMode;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CreateTransactionServiceAdapter implements CreateTransactionService {
@@ -40,9 +42,12 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
     @Override
     @Transactional
     public TransactionDataResponse execute(final TransactionDataRequest requestData) {
+        log.info("Checking if exists a payer account with id {}", requestData.payer());
         Account payer = accountRepository.findById(requestData.payer())
                 .orElseThrow(() -> new PayerNotFoundException()
                         .addField(PAYER, requestData.payer()));
+
+        log.info("Checking if exists a payee account with id {}", requestData.payee());
         Account payee = accountRepository.findById(requestData.payee())
                 .orElseThrow(() -> new PayeeNotFoundException()
                         .addField(PAYEE, requestData.payee()));
@@ -51,6 +56,7 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
                 .getAuthentication()
                 .getPrincipal();
 
+        log.info("Checking if the account logged is the payer");
         if (!accountLogged.getId().equals(payer.getId())) {
             throw new TransactionNotAuthorizedException()
                     .addField(PAYER, requestData.payer())
@@ -58,6 +64,7 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
                     .addField(AMOUNT, requestData.amount().setScale(2, RoundingMode.HALF_EVEN));
         }
 
+        log.info("Checking if payer has enough balance");
         if (payer.getBalance().compareTo(requestData.amount()) < 0) {
             throw new BalanceInsuficientException(payer.getBalance(), requestData.amount())
                     .addField(BALANCE, payer.getBalance())
@@ -66,6 +73,7 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
                     .addField(AMOUNT, requestData.amount().setScale(2, RoundingMode.HALF_EVEN));
         }
 
+        log.info("Requesting fraud prevention service");
         boolean isAuthorized = fraudPreventionService.authorize();
 
         if (!isAuthorized) {
@@ -81,12 +89,17 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
                 .payee(payee)
                 .build();
 
+        log.info("Updating balance of payer account");
         payer.setBalance(payer.getBalance().subtract(requestData.amount()));
+
+        log.info("Updating balance of payee account");
         payee.setBalance(payee.getBalance().add(requestData.amount()));
 
+        log.info("Saving transaction");
         Transaction createdTransaction = transactionRepository.save(newTransaction);
         entityManager.flush();
 
+        log.info("Returning transaction created");
         return new TransactionDataResponse(createdTransaction);
     }
 }

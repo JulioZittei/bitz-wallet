@@ -7,3 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
