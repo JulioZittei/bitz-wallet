@@ -2,7 +2,7 @@ package br.com.bitz.wallet.config.security.filter;
 
 import br.com.bitz.wallet.config.log.StructuredLog;
 import br.com.bitz.wallet.exception.ErrorsCode;
-import br.com.bitz.wallet.exception.ErrorsField;
+import br.com.bitz.wallet.exception.response.ProblemDetail;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,9 +11,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.ServletWebRequest;
 
-import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -33,8 +32,6 @@ public class FilterExceptionHandler {
             return this.handleUsernameNotFound(usernameNotFoundException, request);
         }
 
-        Map<String, Object> problem = new LinkedHashMap<>();
-
         StructuredLog.builder()
                 .errorCode(ErrorsCode.BTW500.name())
                 .errorMessage(ex.getMessage())
@@ -47,11 +44,12 @@ public class FilterExceptionHandler {
                 .errorMessage()
                 .exception();
 
-        problem.put(ErrorsField.CODE, ErrorsCode.BTW500.name());
-        problem.put(ErrorsField.TITLE, ErrorsCode.BTW500.getTitleText());
-        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
-
-        return problem;
+        return ProblemDetail.builder()
+                .status(ErrorsCode.BTW500.getCode())
+                .code(ErrorsCode.BTW500.name())
+                .title(ErrorsCode.BTW500.getTitleText())
+                .instance(request.getRequestURI())
+                .build();
     }
 
     protected Map<String, Object> handleJWTVerification(JWTVerificationException ex, HttpServletRequest request) {
@@ -61,8 +59,6 @@ public class FilterExceptionHandler {
         if (rootCause instanceof TokenExpiredException tokenExpiredException) {
             return handleTokenExpired(tokenExpiredException, request);
         }
-
-        Map<String, Object> problem = new LinkedHashMap<>();
 
         final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
         String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
@@ -79,12 +75,13 @@ public class FilterExceptionHandler {
                 .errorMessage()
                 .exception();
 
-        problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
-        problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
-        problem.put(ErrorsField.DETAIL, message);
-        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
-
-        return problem;
+       return ProblemDetail.builder()
+                .status(ErrorsCode.BTW401.getCode())
+                .code(ErrorsCode.BTW401.name())
+                .title(ErrorsCode.BTW401.getTitleText())
+                .detail(message)
+                .instance(request.getRequestURI())
+                .build();
     }
 
     protected Map<String, Object> handleTokenExpired(TokenExpiredException ex, HttpServletRequest request) {
@@ -92,8 +89,6 @@ public class FilterExceptionHandler {
         final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
         String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
 
-        Map<String, Object> problem = new LinkedHashMap<>();
-
         StructuredLog.builder()
                 .errorCode(ErrorsCode.BTW401.name())
                 .errorMessage(message)
@@ -106,12 +101,13 @@ public class FilterExceptionHandler {
                 .errorMessage()
                 .exception();
 
-        problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
-        problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
-        problem.put(ErrorsField.DETAIL, message);
-        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
-
-        return problem;
+       return ProblemDetail.builder()
+                .status(ErrorsCode.BTW401.getCode())
+                .code(ErrorsCode.BTW401.name())
+                .title(ErrorsCode.BTW401.getTitleText())
+                .detail(message)
+                .instance(request.getRequestURI())
+                .build();
     }
 
     protected Map<String, Object> handleUsernameNotFound(UsernameNotFoundException ex, HttpServletRequest request) {
@@ -119,8 +115,6 @@ public class FilterExceptionHandler {
         final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
         String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE));
 
-        Map<String, Object> problem = new LinkedHashMap<>();
-
         StructuredLog.builder()
                 .errorCode(ErrorsCode.BTW401.name())
                 .errorMessage(message)
@@ -133,11 +127,12 @@ public class FilterExceptionHandler {
                 .errorMessage()
                 .exception();
 
-        problem.put(ErrorsField.CODE, ErrorsCode.BTW401.name());
-        problem.put(ErrorsField.TITLE, ErrorsCode.BTW401.getTitleText());
-        problem.put(ErrorsField.DETAIL, message);
-        problem.put(ErrorsField.INSTANCE, request.getRequestURI());
-
-        return problem;
+       return ProblemDetail.builder()
+                .status(ErrorsCode.BTW401.getCode())
+                .code(ErrorsCode.BTW401.name())
+                .title(ErrorsCode.BTW401.getTitleText())
+                .detail(message)
+                .instance(request.getRequestURI())
+                .build();
     }
 }

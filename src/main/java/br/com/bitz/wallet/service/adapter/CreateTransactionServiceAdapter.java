@@ -10,8 +10,8 @@ import br.com.bitz.wallet.exception.PayerNotFoundException;
 import br.com.bitz.wallet.exception.TransactionNotAuthorizedException;
 import br.com.bitz.wallet.repository.account.AccountRepository;
 import br.com.bitz.wallet.repository.transaction.TransactionRepository;
-import br.com.bitz.wallet.service.port.FraudPreventionService;
 import br.com.bitz.wallet.service.port.CreateTransactionService;
+import br.com.bitz.wallet.service.port.FraudPreventionService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -66,7 +66,7 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
 
         log.info("Checking if payer has enough balance");
         if (payer.getBalance().compareTo(requestData.amount()) < 0) {
-            throw new BalanceInsuficientException(payer.getBalance(), requestData.amount())
+            throw new BalanceInsuficientException(new Object[]{payer.getBalance(), requestData.amount()})
                     .addField(BALANCE, payer.getBalance())
                     .addField(PAYER, requestData.payer())
                     .addField(PAYEE, requestData.payee())

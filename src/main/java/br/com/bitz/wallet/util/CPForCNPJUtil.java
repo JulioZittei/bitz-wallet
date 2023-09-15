@@ -22,6 +22,6 @@ public abstract class CPForCNPJUtil {
             return document.replaceAll(REGEX_CNPJ, CNPJ_SEC_MASK);
         }
 
-        throw new IllegalArgumentException(String.format("document '%s' is not a CPF/CNPJ", document));
+        throw new IllegalArgumentException(String.format("'%s' is not a CPF/CNPJ", document));
     }
 }

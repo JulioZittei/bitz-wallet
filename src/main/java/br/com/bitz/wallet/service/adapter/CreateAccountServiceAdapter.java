@@ -24,12 +24,12 @@ public class CreateAccountServiceAdapter implements CreateAccountService {
     public AccountDataResponse execute(final AccountRegisterDataRequest requestData) {
         log.info("Checking if exists an account with email {}", requestData.email());
         accountRepository.findByEmail(requestData.email()).ifPresent(acc -> {
-            throw new AccountConflictException("email", requestData.email());
+            throw new AccountConflictException(new String[]{"email", requestData.email()});
         });
 
         log.info("Checking if exists an account with document {}", requestData.document());
         accountRepository.findByDocument(requestData.document()).ifPresent(acc -> {
-            throw new AccountConflictException("document", requestData.document());
+            throw new AccountConflictException(new String[]{"document", acc.getDocument()});
         });
 
         var newAccount = new Account(requestData);

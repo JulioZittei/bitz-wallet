@@ -18,6 +18,6 @@ public record AccountRegisterDataRequest(
                 message = "{br.com.bitz.wallet.domain.model.request.AccountRegisterDataRequest.message}")
         String password,
 
-        @EnumValues(AccountType.class)
+        @EnumValues(value = AccountType.class, acceptableValues = "PF,PJ")
         String accountType) {
 }

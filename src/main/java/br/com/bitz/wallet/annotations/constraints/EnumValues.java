@@ -11,7 +11,8 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface EnumValues {
-    String message() default "br.com.bitz.wallet.validator.constraints.Enum.message";
+    String message() default "{br.com.bitz.wallet.validator.constraints.Enum.message}";
+    String acceptableValues() default "";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     Class<? extends Enum> value();

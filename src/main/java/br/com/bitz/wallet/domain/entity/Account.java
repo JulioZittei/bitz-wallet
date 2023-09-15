@@ -22,6 +22,7 @@ import java.util.List;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(setterPrefix = "")
 @Table(name = "accounts")
 @EqualsAndHashCode(of = "id")
 public class Account implements UserDetails {
