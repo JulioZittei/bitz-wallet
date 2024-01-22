@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -33,17 +34,42 @@ import java.util.regex.Pattern;
 public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAdvice, HandlerInterceptor {
 
     private ObjectMapper mapper;
-
     private String method;
+    private String headers;
     private String path;
+    private String queryParameters;
     private String response;
+    private String request;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        StringBuilder headers = new StringBuilder();
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            String headerValue = request.getHeader(headerName);
+            headers.append(String.format("%s = %s; ", headerName, headerValue));
+        }
+        this.headers = headers.toString();
+        this.path = request.getRequestURI();
+        this.method = request.getMethod();
+        this.queryParameters = request.getQueryString();
+        StructuredLog.builder()
+            .headers(this.headers)
+            .path(this.path)
+            .queryParameters(this.queryParameters)
+            .method(this.method);
+
+
         if (mapper == null) {
             mapper = JsonMapper.builder()
-                    .addModule(new JavaTimeModule())
-                    .build();
+                .addModule(new JavaTimeModule())
+                .build();
+        }
+
+        if (this.method.equals("GET")) {
+            log.info("Request recebido");
+            StructuredLog.remove().path().queryParameters().method().headers().requestBody();
         }
         return true;
     }
@@ -51,12 +77,20 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
     @Override
     public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response,
                                 final Object handler, final Exception ex) {
+        StringBuilder headers = new StringBuilder();
+        response.getHeaderNames().forEach(headerName -> {
+            String headerValue = response.getHeader(headerName);
+            headers.append(String.format("%s = %s; ", headerName, headerValue));
+        });
         StructuredLog.builder()
-                .httpStatus(response.getStatus())
-                .responseBody(this.response)
-                .path(this.path)
-                .method(this.method);
-        log.info("Returning response");
+            .httpStatus(response.getStatus())
+            .requestBody(this.request)
+            .responseBody(this.response)
+            .headers(headers.toString())
+            .path(this.path)
+            .queryParameters(this.queryParameters)
+            .method(this.method);
+        log.info("Retornando response");
         MDC.clear();
     }
 
@@ -73,6 +107,7 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
                                   final Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   final ServerHttpRequest request,
                                   final ServerHttpResponse response) {
+
         try {
             if (obj != null && !Pattern.matches(".*actuator.*", request.getURI().toString())) {
                 this.response = mapper.writeValueAsString(obj);
@@ -81,7 +116,6 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
             }
         } catch (JsonProcessingException jpe) {
             log.error(jpe.getMessage(), jpe);
-
         }
 
         return obj;
@@ -99,19 +133,17 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
 
     @Override
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
-
         try {
             if (body != null) {
+                this.request = mapper.writeValueAsString(body);
                 StructuredLog.builder()
-                        .requestBody(mapper.writeValueAsString(body));
-                log.info("Received request body");
-                StructuredLog.remove().requestBody();
+                    .requestBody(this.request);
+                log.info("Request recebido");
+                StructuredLog.remove().path().queryParameters().method().headers().requestBody();
             }
         } catch (JsonProcessingException jpe) {
             log.error(jpe.getMessage(), jpe);
-
         }
-
         return body;
     }
 
