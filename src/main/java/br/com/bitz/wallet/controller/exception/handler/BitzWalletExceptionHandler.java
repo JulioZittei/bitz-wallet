@@ -48,7 +48,6 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     private final MessageSource messageSource;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static final String MESSAGE = ".message";
-
     private static final String CLIENT_ERROR = "A client error occurred during the request";
     private static final String SERVER_ERROR = "A server error occurred during the request";
 
@@ -57,7 +56,7 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     }
 
     @Override
-    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex) throws IOException, ServletException {
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException ex) throws IOException {
 
         StructuredLog.builder()
                 .errorCode(ErrorsCode.BTW403.name())
@@ -89,7 +88,7 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     }
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex) throws IOException, ServletException {
+    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException ex) throws IOException {
 
         StructuredLog.builder()
                 .errorCode(ErrorsCode.BTW401.name())
