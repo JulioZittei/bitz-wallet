@@ -27,12 +27,22 @@ public class StructuredLog {
         }
 
         public StructuredLogBuilder path(final String path) {
-            MDC.put("path", String.valueOf(path));
+            MDC.put("path", path);
+            return this;
+        }
+
+        public StructuredLogBuilder headers(final String headers) {
+            MDC.put("headers", headers);
+            return this;
+        }
+
+        public StructuredLogBuilder queryParameters(final String queryParameters) {
+            MDC.put("queryParameters", queryParameters);
             return this;
         }
 
         public StructuredLogBuilder method(final String method) {
-            MDC.put("method", String.valueOf(method));
+            MDC.put("method", method);
             return this;
         }
 
@@ -93,6 +103,21 @@ public class StructuredLog {
 
         public StructuredLogRemove path() {
             MDC.remove("path");
+            return this;
+        }
+
+        public StructuredLogRemove method() {
+            MDC.remove("method");
+            return this;
+        }
+
+        public StructuredLogRemove headers() {
+            MDC.remove("headers");
+            return this;
+        }
+
+        public StructuredLogRemove queryParameters() {
+            MDC.remove("queryParameters");
             return this;
         }
 
