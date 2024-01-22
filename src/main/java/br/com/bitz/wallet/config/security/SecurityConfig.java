@@ -26,18 +26,12 @@ public class SecurityConfig {
     private final AuthFilter authFilter;
 
     private final BitzWalletExceptionHandler exceptionHandler;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    private static final String TYPE = "type";
-    private static final String CODE = "code";
-    private static final String TITLE = "title";
-    private static final String DETAIL = "detail";
-    private static final String INSTANCE = "instance";
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v3/**", "/swagger-ui/**").permitAll()
