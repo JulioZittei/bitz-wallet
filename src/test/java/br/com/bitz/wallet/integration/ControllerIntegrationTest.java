@@ -1,10 +1,8 @@
 package br.com.bitz.wallet.integration;
 
-import br.com.bitz.wallet.domain.model.request.TransactionDataRequest;
 import br.com.bitz.wallet.domain.model.response.AccountDataResponse;
 import br.com.bitz.wallet.domain.model.response.TokenDataResponse;
 import br.com.bitz.wallet.domain.model.response.TransactionDataResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.math.BigDecimal;
 import java.util.Locale;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

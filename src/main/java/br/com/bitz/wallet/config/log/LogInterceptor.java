@@ -8,18 +8,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
@@ -43,14 +40,14 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        StringBuilder headers = new StringBuilder();
+        StringBuilder requestHeaders = new StringBuilder();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
             String headerValue = request.getHeader(headerName);
-            headers.append(String.format("%s = %s; ", headerName, headerValue));
+            requestHeaders.append(String.format("%s = %s; ", headerName, headerValue));
         }
-        this.headers = headers.toString();
+        this.headers = requestHeaders.toString();
         this.path = request.getRequestURI();
         this.method = request.getMethod();
         this.queryParameters = request.getQueryString();
@@ -71,22 +68,23 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
             log.info("Request recebido");
             StructuredLog.remove().path().queryParameters().method().headers().requestBody();
         }
+
         return true;
     }
 
     @Override
     public void afterCompletion(final HttpServletRequest request, final HttpServletResponse response,
                                 final Object handler, final Exception ex) {
-        StringBuilder headers = new StringBuilder();
+        StringBuilder requestHeaders = new StringBuilder();
         response.getHeaderNames().forEach(headerName -> {
             String headerValue = response.getHeader(headerName);
-            headers.append(String.format("%s = %s; ", headerName, headerValue));
+            requestHeaders.append(String.format("%s = %s; ", headerName, headerValue));
         });
         StructuredLog.builder()
             .httpStatus(response.getStatus())
             .requestBody(this.request)
             .responseBody(this.response)
-            .headers(headers.toString())
+            .headers(requestHeaders.toString())
             .path(this.path)
             .queryParameters(this.queryParameters)
             .method(this.method);
@@ -116,6 +114,7 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
             }
         } catch (JsonProcessingException jpe) {
             log.error(jpe.getMessage(), jpe);
+
         }
 
         return obj;
@@ -135,15 +134,19 @@ public class LogInterceptor implements ResponseBodyAdvice<Object>, RequestBodyAd
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
         try {
             if (body != null) {
-                this.request = mapper.writeValueAsString(body);
+                request = mapper.writeValueAsString(body);
                 StructuredLog.builder()
-                    .requestBody(this.request);
-                log.info("Request recebido");
+                    .requestBody(request);
+                log.info("Request body recebido");
                 StructuredLog.remove().path().queryParameters().method().headers().requestBody();
             }
         } catch (JsonProcessingException jpe) {
             log.error(jpe.getMessage(), jpe);
+
+        } finally {
+            StructuredLog.remove().path().queryParameters().method().headers().requestBody();
         }
+
         return body;
     }
 

@@ -1,9 +1,10 @@
 package br.com.bitz.wallet.domain.model.request;
 
+import br.com.bitz.wallet.annotations.constraints.CPForCNPJ;
 import br.com.bitz.wallet.annotations.constraints.EnumValues;
 import br.com.bitz.wallet.domain.enums.AccountType;
-import br.com.bitz.wallet.annotations.constraints.CPForCNPJ;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import org.hibernate.validator.constraints.Length;
 
 public record AccountRegisterDataRequest(

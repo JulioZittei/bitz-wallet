@@ -15,6 +15,7 @@ public enum ErrorsCode {
     BTW004(404),
     BTW005(400),
     BTW006(400),
+    BTW007(500),
     BTW400(400),
     BTW401(401),
     BTW403(403),

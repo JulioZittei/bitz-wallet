@@ -12,6 +12,7 @@ import br.com.bitz.wallet.repository.account.AccountRepository;
 import br.com.bitz.wallet.repository.transaction.TransactionRepository;
 import br.com.bitz.wallet.service.port.CreateTransactionService;
 import br.com.bitz.wallet.service.port.FraudPreventionService;
+import br.com.bitz.wallet.service.port.NotificationService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,8 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
     private final AccountRepository accountRepository;
 
     private final FraudPreventionService fraudPreventionService;
+
+    private final NotificationService notificationService;
 
     private static final String PAYER = "payer";
     private static final String PAYEE = "payee";
@@ -99,7 +102,12 @@ public class CreateTransactionServiceAdapter implements CreateTransactionService
         Transaction createdTransaction = transactionRepository.save(newTransaction);
         entityManager.flush();
 
+        var response = new TransactionDataResponse(createdTransaction);
+
+        log.info("Notifying transaction");
+        notificationService.execute(response);
+
         log.info("Returning transaction created");
-        return new TransactionDataResponse(createdTransaction);
+        return response;
     }
 }

@@ -2,7 +2,6 @@ package br.com.bitz.wallet.config.security;
 
 import br.com.bitz.wallet.config.security.filter.AuthFilter;
 import br.com.bitz.wallet.controller.exception.handler.BitzWalletExceptionHandler;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

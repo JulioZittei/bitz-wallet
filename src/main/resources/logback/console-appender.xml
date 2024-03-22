@@ -1,5 +1,6 @@
 <included>
     <appender class="ch.qos.logback.core.ConsoleAppender" name="CONSOLE">
+        <charset>UTF-8</charset>
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
             <layout class="br.com.bitz.wallet.config.log.CustomJsonLayout">
                 <appendLineSeparator>true</appendLineSeparator>

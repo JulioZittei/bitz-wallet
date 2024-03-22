@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +29,7 @@ import org.springframework.validation.ObjectError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -358,7 +358,7 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
     protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 
         StructuredLog.builder()
-                .errorCode(ErrorsCode.BTW401.name())
+                .errorCode(ErrorsCode.BTW404.name())
                 .errorMessage(ErrorsCode.BTW404.getTitleText())
                 .exception(ex.getClass());
 
@@ -554,6 +554,36 @@ public class BitzWalletExceptionHandler extends ResponseEntityExceptionHandler i
                 .build();
 
         return handleExceptionInternal(ex, problemDetail, headers, ErrorsCode.BTW400.getHttpStatusCode(), request);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<Object> handleMissingRequestHeaderException(MissingRequestHeaderException ex, WebRequest request) {
+        final ResourceBundle resourceBundle = ResourceBundle.getBundle(ErrorsCode.BUNDLE_NAME, LocaleContextHolder.getLocale());
+        String message = resourceBundle.getString(ex.getClass().getSimpleName().concat(MESSAGE))
+            .replace("{{field}}", ex.getHeaderName());
+
+        StructuredLog.builder()
+            .errorCode(ErrorsCode.BTW400.name())
+            .errorMessage(message)
+            .exception(ex.getClass());
+
+        log.error(CLIENT_ERROR);
+
+        StructuredLog.remove()
+            .errorCode()
+            .errorMessage()
+            .exception();
+
+        var problemDetail = ProblemDetail.builder()
+            .status(ErrorsCode.BTW400.getCode())
+            .code(ErrorsCode.BTW400.name())
+            .title(ErrorsCode.BTW400.getTitleText())
+            .detail(message)
+            .instance(((ServletWebRequest) request).getRequest().getRequestURI())
+            .build();
+
+        return handleExceptionInternal(ex, problemDetail, new HttpHeaders(), ErrorsCode.BTW400.getHttpStatusCode(), request);
+
     }
 }
 
